@@ -7,23 +7,10 @@ import SummaryBox from './components/SummaryBox';
 import LanguagesChart from './components/LanguagesChart';
 import RepoTable from './components/RepoTable';
 import { AlertCircle, Sparkles, Terminal } from 'lucide-react';
-
-const GithubIcon = ({ className }) => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
-    <path d="M9 18c-4.51 2-5-2-7-2" />
-  </svg>
-);
+import { GithubIcon } from './components/Icons';
 
 function App() {
+  const [view, setView] = useState('home'); // 'home' or 'dashboard'
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -34,12 +21,19 @@ function App() {
     try {
       const result = await analyzeUser(username);
       setData(result);
+      setView('dashboard');
     } catch (err) {
       setError(err.message);
       setData(null);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleReset = () => {
+    setView('home');
+    setData(null);
+    setError(null);
   };
 
   return (
@@ -56,7 +50,15 @@ function App() {
             </h1>
           </div>
           <div className="flex items-center gap-4 text-sm font-semibold text-slate-600">
-            <span className="hidden md:block">GitHub Developer Intelligence</span>
+            {view === 'dashboard' && (
+              <button 
+                onClick={handleReset}
+                className="text-primary hover:text-primary/80 transition-colors flex items-center gap-1 cursor-pointer"
+              >
+                <Sparkles size={16} />
+                New Analysis
+              </button>
+            )}
             <div className="h-4 w-px bg-slate-200 hidden md:block"></div>
             <a href="https://github.com" target="_blank" className="hover:text-primary transition-colors">
               API Docs
@@ -66,39 +68,61 @@ function App() {
       </header>
 
       <main className="container mx-auto px-4 pt-12">
-        {/* Search Section */}
-        <section className="text-center mb-16">
-          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-6">
-            <Sparkles size={14} />
-            AI-Powered Analysis
-          </div>
-          <h2 className="text-4xl md:text-6xl font-black text-slate-900 mb-6 tracking-tight">
-            Analyze any GitHub <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-accent">
-              Developer Profile
-            </span>
-          </h2>
-          <SearchBar onSearch={handleSearch} isLoading={loading} />
-        </section>
-
-        {/* Error State */}
-        {error && (
-          <div className="max-w-2xl mx-auto mb-12">
-            <div className="bg-rose-50 border border-rose-200 p-6 rounded-2xl flex items-center gap-4 text-rose-800 shadow-lg shadow-rose-200/20">
-              <div className="bg-rose-500 p-3 rounded-xl shadow-lg shadow-rose-500/20">
-                <AlertCircle className="text-white h-6 w-6" />
+        {/* Home / Search Section */}
+        {view === 'home' && (
+          <section className="text-center py-20 animate-in fade-in zoom-in duration-500">
+            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest mb-6">
+              <Sparkles size={14} />
+              AI-Powered Analysis
+            </div>
+            <h2 className="text-4xl md:text-7xl font-black text-slate-900 mb-8 tracking-tight leading-tight">
+              Uncover the <span className="text-primary">DNA</span> of any <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-accent">
+                GitHub Developer
+              </span>
+            </h2>
+            <SearchBar onSearch={handleSearch} isLoading={loading} />
+            
+            {/* Error State moved here */}
+            {error && (
+              <div className="max-w-2xl mx-auto mt-8">
+                <div className="bg-rose-50 border border-rose-200 p-4 rounded-xl flex items-center gap-4 text-rose-800 shadow-sm">
+                  <AlertCircle className="text-rose-500 h-5 w-5 shrink-0" />
+                  <p className="text-sm font-medium">{error}</p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-bold text-lg">Analysis Failed</h3>
-                <p className="text-rose-600/80">{error}</p>
+            )}
+
+            <div className="max-w-4xl mx-auto mt-20">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+                {[
+                  { title: 'Quick Insight', desc: 'Get a comprehensive developer overview in seconds.' },
+                  { title: 'Score Matrix', desc: 'Advanced scoring algorithm based on real Git data.' },
+                  { title: 'AI Summary', desc: 'Personalized career analysis generated by GPT-4.' }
+                ].map((item, i) => (
+                  <div key={i} className="p-6">
+                    <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center mb-4 mx-auto">
+                      <Sparkles className="text-slate-400 h-5 w-5" />
+                    </div>
+                    <h4 className="font-bold text-slate-900 mb-2">{item.title}</h4>
+                    <p className="text-xs text-slate-500 leading-relaxed">{item.desc}</p>
+                  </div>
+                ))}
               </div>
             </div>
-          </div>
+          </section>
         )}
 
         {/* Dashboard Content */}
-        {data && !loading && (
-          <div className="space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
+        {view === 'dashboard' && data && (
+          <div className="space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-700 max-w-7xl mx-auto">
+            {/* Back button for mobile */}
+            <button 
+              onClick={handleReset}
+              className="md:hidden flex items-center gap-2 text-slate-500 font-bold text-sm mb-4"
+            >
+              ← Back to search
+            </button>
             {/* Top Row: Profile & Score */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2">
@@ -149,30 +173,10 @@ function App() {
             </div>
 
             {/* Repositories Table */}
-            <RepoTable topRepos={data.top_repos} allRepos={data.all_repos} />
+            <RepoTable topRepos={data.top_repos} allRepos={data.all_repos} username={data.username} />
           </div>
         )}
 
-        {/* Empty State */}
-        {!data && !loading && !error && (
-          <div className="max-w-4xl mx-auto mt-20 text-center">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {[
-                { title: 'Quick Insight', desc: 'Get a comprehensive developer overview in seconds.' },
-                { title: 'Score Matrix', desc: 'Advanced scoring algorithm based on real Git data.' },
-                { title: 'AI Summary', desc: 'Personalized career analysis generated by GPT-4.' }
-              ].map((item, i) => (
-                <div key={i} className="glass-card p-8 group hover:border-primary/30 transition-all duration-300">
-                  <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center mb-6 mx-auto group-hover:bg-primary/10 transition-colors">
-                    <Sparkles className="text-slate-400 group-hover:text-primary h-6 w-6 transition-colors" />
-                  </div>
-                  <h4 className="font-bold text-slate-900 mb-2">{item.title}</h4>
-                  <p className="text-sm text-slate-500 leading-relaxed">{item.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </main>
 
       <footer className="mt-32 border-t border-slate-200 pt-12 text-center text-slate-400 text-sm">

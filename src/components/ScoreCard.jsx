@@ -9,74 +9,98 @@ const ScoreCard = ({ score }) => {
     const controls = animate(0, score, {
       duration: 2,
       onUpdate: (value) => setDisplayScore(Math.round(value)),
-      ease: "easeOut"
+      ease: [0.34, 1.56, 0.64, 1] // Custom elastic ease
     });
     return () => controls.stop();
   }, [score]);
 
-  const getColor = () => {
-    if (score <= 40) return 'text-red-500 bg-red-50 border-red-200 shadow-red-200/50';
-    if (score <= 70) return 'text-amber-500 bg-amber-50 border-amber-200 shadow-amber-200/50';
-    return 'text-emerald-500 bg-emerald-50 border-emerald-200 shadow-emerald-200/50';
+  const getStyle = () => {
+    if (score <= 40) return {
+      color: 'text-rose-500',
+      bg: 'bg-rose-50',
+      border: 'border-rose-100',
+      shadow: 'shadow-rose-100',
+      label: 'Emerging Developer',
+      desc: 'Significant growth potential identified.'
+    };
+    if (score <= 70) return {
+      color: 'text-amber-500',
+      bg: 'bg-amber-50',
+      border: 'border-amber-100',
+      shadow: 'shadow-amber-100',
+      label: 'Established Professional',
+      desc: 'Consistent and reliable contributor.'
+    };
+    return {
+      color: 'text-emerald-500',
+      bg: 'bg-emerald-50',
+      border: 'border-emerald-100',
+      shadow: 'shadow-emerald-100',
+      label: 'Elite Tech Lead',
+      desc: 'Exceptional technical leadership skills.'
+    };
   };
 
-  const getIcon = () => {
-    if (score <= 40) return <AlertCircle className="w-8 h-8" />;
-    if (score <= 70) return <Trophy className="w-8 h-8 text-amber-400" />;
-    return <CheckCircle2 className="w-8 h-8" />;
-  };
-
-  const getLabel = () => {
-    if (score <= 40) return 'Junior Level';
-    if (score <= 70) return 'Mid-Senior Level';
-    return 'Elite Contributor';
-  };
+  const style = getStyle();
 
   return (
-    <div className={`glass-card p-8 flex flex-col items-center justify-center text-center border-2 transition-colors duration-500 ${getColor().split(' ').slice(1).join(' ')}`}>
-      <h3 className="text-slate-500 font-semibold uppercase tracking-wider text-sm mb-4">Developer Score</h3>
+    <div className={`glass-card p-8 h-full flex flex-col items-center justify-between relative overflow-hidden group`}>
+      <div className={`absolute top-0 left-0 w-full h-1 ${style.bg.replace('bg-', 'bg-')}`}></div>
       
-      <div className="relative mb-6">
-        <svg className="w-40 h-40 transform -rotate-90">
-          <circle
-            cx="80"
-            cy="80"
-            r="70"
-            stroke="currentColor"
-            strokeWidth="12"
-            fill="transparent"
-            className="text-slate-200"
-          />
-          <motion.circle
-            cx="80"
-            cy="80"
-            r="70"
-            stroke="currentColor"
-            strokeWidth="12"
-            fill="transparent"
-            strokeDasharray={440}
-            initial={{ strokeDashoffset: 440 }}
-            animate={{ strokeDashoffset: 440 - (440 * score) / 100 }}
-            transition={{ duration: 2, ease: "easeOut" }}
-            className={getColor().split(' ')[0]}
-          />
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className={`text-5xl font-black ${getColor().split(' ')[0]}`}>
-            {displayScore}
-          </span>
-          <span className="text-slate-400 text-xs font-bold">/ 100</span>
+      <div className="text-center">
+        <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-8">
+          Developer Score
+        </h3>
+        
+        <div className="relative mb-8 flex justify-center">
+          <svg className="w-48 h-48 transform -rotate-90 drop-shadow-sm">
+            <circle
+              cx="96"
+              cy="96"
+              r="88"
+              stroke="currentColor"
+              strokeWidth="10"
+              fill="transparent"
+              className="text-slate-100"
+            />
+            <motion.circle
+              cx="96"
+              cy="96"
+              r="88"
+              stroke="currentColor"
+              strokeWidth="10"
+              strokeLinecap="round"
+              fill="transparent"
+              strokeDasharray={553}
+              initial={{ strokeDashoffset: 553 }}
+              animate={{ strokeDashoffset: 553 - (553 * score) / 100 }}
+              transition={{ duration: 2.5, ease: "easeOut" }}
+              className={style.color}
+            />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <motion.span 
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className={`text-6xl font-black tracking-tighter ${style.color}`}
+            >
+              {displayScore}
+            </motion.span>
+            <span className="text-slate-400 text-xs font-bold mt-1">PERCENTILE</span>
+          </div>
         </div>
       </div>
 
-      <div className={`flex items-center gap-2 mb-2 ${getColor().split(' ')[0]}`}>
-        {getIcon()}
-        <span className="text-xl font-bold">{getLabel()}</span>
+      <div className="w-full">
+        <div className={`p-4 rounded-2xl ${style.bg} border ${style.border} text-center transition-all duration-500 group-hover:shadow-lg ${style.shadow}`}>
+          <div className={`text-sm font-black uppercase tracking-wider mb-1 ${style.color}`}>
+            {style.label}
+          </div>
+          <p className="text-xs text-slate-500 font-medium leading-relaxed">
+            {style.desc}
+          </p>
+        </div>
       </div>
-      
-      <p className="text-slate-500 text-sm max-w-[200px]">
-        Based on contributions, repo quality, and engagement.
-      </p>
     </div>
   );
 };

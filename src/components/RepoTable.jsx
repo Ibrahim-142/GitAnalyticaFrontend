@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { Star, GitFork, ExternalLink, ChevronDown, ChevronUp, Calendar } from 'lucide-react';
 
-const RepoRow = ({ repo }) => (
+const RepoRow = ({ repo, username }) => (
   <tr className="hover:bg-slate-50/80 transition-colors border-b border-slate-100 last:border-0">
     <td className="py-4 px-4">
       <div className="flex flex-col">
         <span className="font-bold text-slate-900 group flex items-center gap-1">
           {repo.name}
-          <a href={`https://github.com/${repo.full_name || repo.name}`} target="_blank" rel="noreferrer">
+          <a href={`https://github.com/${repo.full_name || `${username}/${repo.name}`}`} target="_blank" rel="noreferrer">
             <ExternalLink size={14} className="text-slate-400 hover:text-primary transition-colors" />
           </a>
         </span>
@@ -42,7 +42,7 @@ const RepoRow = ({ repo }) => (
   </tr>
 );
 
-const RepoTable = ({ topRepos, allRepos }) => {
+const RepoTable = ({ topRepos, allRepos, username }) => {
   const [showAll, setShowAll] = useState(false);
 
   return (
@@ -64,7 +64,7 @@ const RepoTable = ({ topRepos, allRepos }) => {
             </thead>
             <tbody>
               {topRepos.map((repo, idx) => (
-                <RepoRow key={repo.name + idx} repo={repo} />
+                <RepoRow key={repo.name + idx} repo={repo} username={username} />
               ))}
             </tbody>
           </table>
@@ -105,7 +105,7 @@ const RepoTable = ({ topRepos, allRepos }) => {
                   </thead>
                   <tbody>
                     {allRepos.map((repo, idx) => (
-                      <RepoRow key={repo.name + idx} repo={repo} />
+                      <RepoRow key={repo.name + idx} repo={repo} username={username} />
                     ))}
                   </tbody>
                 </table>
