@@ -1,4 +1,3 @@
-import React from 'react';
 import { Sparkles, FileText } from 'lucide-react';
 
 const SummaryBox = ({ summary }) => {
@@ -8,7 +7,7 @@ const SummaryBox = ({ summary }) => {
         <Sparkles className="text-primary h-5 w-5 animate-pulse" />
         <h3 className="text-white font-bold text-lg">AI Developer Analysis</h3>
       </div>
-      <div className="p-8 bg-gradient-to-br from-white to-slate-50">
+      <div className="p-8 bg-linear-to-br from-white to-slate-50">
         <div className="flex gap-4">
           <div className="hidden md:block">
             <div className="bg-primary/10 p-3 rounded-xl">

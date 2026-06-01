@@ -1,5 +1,4 @@
-import React from 'react';
-import { Users, BookText, GitBranch, MapPin, Link as LinkIcon } from 'lucide-react';
+import { Users, BookText } from 'lucide-react';
 import { GithubIcon } from './Icons';
 
 
@@ -8,7 +7,7 @@ const ProfileCard = ({ data }) => {
 
   return (
     <div className="glass-card overflow-hidden group">
-      <div className="h-24 bg-gradient-to-r from-primary/20 via-secondary/20 to-accent/20 w-full"></div>
+      <div className="h-24 bg-linear-to-r from-primary/20 via-secondary/20 to-accent/20 w-full"></div>
       <div className="px-8 pb-8 -mt-12">
         <div className="flex flex-col md:flex-row items-end gap-6 mb-8">
           <div className="relative shrink-0">

@@ -1,27 +1,37 @@
-import React, { useState } from 'react';
-import { analyzeUser } from './services/github';
+import { useState } from 'react';
+import { analyzeUser, compareUsers, reviewPR } from './services/github';
 import SearchBar from './components/SearchBar';
 import ProfileCard from './components/ProfileCard';
 import ScoreCard from './components/ScoreCard';
 import SummaryBox from './components/SummaryBox';
 import LanguagesChart from './components/LanguagesChart';
 import RepoTable from './components/RepoTable';
-import { AlertCircle, Sparkles, Terminal } from 'lucide-react';
+import { AlertCircle, Sparkles, Terminal, Users, GitPullRequest } from 'lucide-react';
 import { GithubIcon } from './components/Icons';
 
 function App() {
-  const [view, setView] = useState('home'); // 'home' or 'dashboard'
+  const [view, setView] = useState('home'); // 'home', 'analyze', 'compare', 'review'
+  const [activeTab, setActiveTab] = useState('analyze'); // 'analyze', 'compare', 'review'
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  
+  // For compare users
+  const [compareUser1, setCompareUser1] = useState('');
+  const [compareUser2, setCompareUser2] = useState('');
+  const [compareError, setCompareError] = useState('');
 
-  const handleSearch = async (username) => {
+  // For PR review
+  const [prUrl, setPrUrl] = useState('');
+  const [prReviewError, setPrReviewError] = useState('');
+
+  const handleAnalyzeSearch = async (username) => {
     setLoading(true);
     setError(null);
     try {
       const result = await analyzeUser(username);
       setData(result);
-      setView('dashboard');
+      setView('analyze');
     } catch (err) {
       setError(err.message);
       setData(null);
@@ -30,10 +40,60 @@ function App() {
     }
   };
 
+  const handleCompare = async (e) => {
+    e.preventDefault();
+    if (!compareUser1 || !compareUser2) {
+      setCompareError('Please enter both usernames');
+      return;
+    }
+    
+    setLoading(true);
+    setCompareError(null);
+    setError(null);
+    try {
+      const result = await compareUsers(compareUser1, compareUser2);
+      setData(result);
+      setView('compare');
+    } catch (err) {
+      setCompareError(err.message);
+      setData(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePRReview = async (e) => {
+    e.preventDefault();
+    if (!prUrl) {
+      setPrReviewError('Please enter a PR URL');
+      return;
+    }
+    
+    setLoading(true);
+    setPrReviewError(null);
+    setError(null);
+    try {
+      const result = await reviewPR(prUrl);
+      setData(result);
+      setView('review');
+    } catch (err) {
+      setPrReviewError(err.message);
+      setData(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleReset = () => {
     setView('home');
+    setActiveTab('analyze');
     setData(null);
     setError(null);
+    setCompareError('');
+    setPrReviewError('');
+    setCompareUser1('');
+    setCompareUser2('');
+    setPrUrl('');
   };
 
   return (
@@ -50,7 +110,7 @@ function App() {
             </h1>
           </div>
           <div className="flex items-center gap-4 text-sm font-semibold text-slate-600">
-            {view === 'dashboard' && (
+            {view !== 'home' && (
               <button 
                 onClick={handleReset}
                 className="text-primary hover:text-primary/80 transition-colors flex items-center gap-1 cursor-pointer"
@@ -77,20 +137,132 @@ function App() {
             </div>
             <h2 className="text-4xl md:text-7xl font-black text-slate-900 mb-8 tracking-tight leading-tight">
               Uncover the <span className="text-primary">DNA</span> of any <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-accent">
+              <span className="text-transparent bg-clip-text bg-linear-to-r from-primary via-secondary to-accent">
                 GitHub Developer
               </span>
             </h2>
-            <SearchBar onSearch={handleSearch} isLoading={loading} />
-            
-            {/* Error State moved here */}
-            {error && (
-              <div className="max-w-2xl mx-auto mt-8">
-                <div className="bg-rose-50 border border-rose-200 p-4 rounded-xl flex items-center gap-4 text-rose-800 shadow-sm">
-                  <AlertCircle className="text-rose-500 h-5 w-5 shrink-0" />
-                  <p className="text-sm font-medium">{error}</p>
+
+            {/* Tabs for different features */}
+            <div className="flex justify-center gap-2 mb-8">
+              <button
+                onClick={() => setActiveTab('analyze')}
+                className={`px-6 py-2 rounded-lg font-semibold transition-all ${
+                  activeTab === 'analyze'
+                    ? 'bg-primary text-white shadow-lg'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Terminal size={16} />
+                  Analyze User
                 </div>
+              </button>
+              <button
+                onClick={() => setActiveTab('compare')}
+                className={`px-6 py-2 rounded-lg font-semibold transition-all ${
+                  activeTab === 'compare'
+                    ? 'bg-primary text-white shadow-lg'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Users size={16} />
+                  Compare Users
+                </div>
+              </button>
+              <button
+                onClick={() => setActiveTab('review')}
+                className={`px-6 py-2 rounded-lg font-semibold transition-all ${
+                  activeTab === 'review'
+                    ? 'bg-primary text-white shadow-lg'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <GitPullRequest size={16} />
+                  Review PR
+                </div>
+              </button>
+            </div>
+
+            {/* Analyze User Tab */}
+            {activeTab === 'analyze' && (
+              <div className="max-w-2xl mx-auto">
+                <SearchBar onSearch={handleAnalyzeSearch} isLoading={loading} />
+                {error && (
+                  <div className="max-w-2xl mx-auto mt-8">
+                    <div className="bg-rose-50 border border-rose-200 p-4 rounded-xl flex items-center gap-4 text-rose-800 shadow-sm">
+                      <AlertCircle className="text-rose-500 h-5 w-5 shrink-0" />
+                      <p className="text-sm font-medium">{error}</p>
+                    </div>
+                  </div>
+                )}
               </div>
+            )}
+
+            {/* Compare Users Tab */}
+            {activeTab === 'compare' && (
+              <form onSubmit={handleCompare} className="max-w-2xl mx-auto">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input
+                      type="text"
+                      placeholder="Username 1"
+                      value={compareUser1}
+                      onChange={(e) => setCompareUser1(e.target.value)}
+                      className="px-4 py-3 bg-slate-100 border border-slate-200 rounded-lg font-semibold text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Username 2"
+                      value={compareUser2}
+                      onChange={(e) => setCompareUser2(e.target.value)}
+                      className="px-4 py-3 bg-slate-100 border border-slate-200 rounded-lg font-semibold text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full px-8 py-3 bg-primary text-white font-bold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+                  >
+                    {loading ? 'Comparing...' : 'Compare'}
+                  </button>
+                </div>
+                {compareError && (
+                  <div className="mt-4 bg-rose-50 border border-rose-200 p-4 rounded-xl flex items-center gap-4 text-rose-800 shadow-sm">
+                    <AlertCircle className="text-rose-500 h-5 w-5 shrink-0" />
+                    <p className="text-sm font-medium">{compareError}</p>
+                  </div>
+                )}
+              </form>
+            )}
+
+            {/* Review PR Tab */}
+            {activeTab === 'review' && (
+              <form onSubmit={handlePRReview} className="max-w-2xl mx-auto">
+                <div className="space-y-4">
+                  <input
+                    type="text"
+                    placeholder="PR URL (e.g., https://github.com/user/repo/pull/123)"
+                    value={prUrl}
+                    onChange={(e) => setPrUrl(e.target.value)}
+                    className="w-full px-4 py-3 bg-slate-100 border border-slate-200 rounded-lg font-semibold text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  />
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full px-8 py-3 bg-primary text-white font-bold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+                  >
+                    {loading ? 'Reviewing...' : 'Review PR'}
+                  </button>
+                </div>
+                {prReviewError && (
+                  <div className="mt-4 bg-rose-50 border border-rose-200 p-4 rounded-xl flex items-center gap-4 text-rose-800 shadow-sm">
+                    <AlertCircle className="text-rose-500 h-5 w-5 shrink-0" />
+                    <p className="text-sm font-medium">{prReviewError}</p>
+                  </div>
+                )}
+              </form>
             )}
 
             <div className="max-w-4xl mx-auto mt-20">
@@ -98,7 +270,7 @@ function App() {
                 {[
                   { title: 'Quick Insight', desc: 'Get a comprehensive developer overview in seconds.' },
                   { title: 'Score Matrix', desc: 'Advanced scoring algorithm based on real Git data.' },
-                  { title: 'AI Summary', desc: 'Personalized career analysis generated by GPT-4.' }
+                  { title: 'AI Summary', desc: 'Personalized career analysis generated by Groq AI.' }
                 ].map((item, i) => (
                   <div key={i} className="p-6">
                     <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center mb-4 mx-auto">
@@ -113,8 +285,8 @@ function App() {
           </section>
         )}
 
-        {/* Dashboard Content */}
-        {view === 'dashboard' && data && (
+        {/* Analyze Dashboard */}
+        {view === 'analyze' && data && (
           <div className="space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-700 max-w-7xl mx-auto">
             {/* Back button for mobile */}
             <button 
@@ -174,6 +346,93 @@ function App() {
 
             {/* Repositories Table */}
             <RepoTable topRepos={data.top_repos} allRepos={data.all_repos} username={data.username} />
+          </div>
+        )}
+
+        {/* Compare Dashboard */}
+        {view === 'compare' && data && (
+          <div className="space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-700 max-w-7xl mx-auto">
+            <button 
+              onClick={handleReset}
+              className="md:hidden flex items-center gap-2 text-slate-500 font-bold text-sm mb-4"
+            >
+              ← Back
+            </button>
+            <h2 className="text-3xl font-black text-slate-900 mb-8">Comparison Analysis</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {data.user1 && (
+                <div className="glass-card p-6 bg-blue-50 border-blue-200">
+                  <h3 className="text-xl font-bold text-slate-900 mb-4">{data.user1.name || data.user1.username}</h3>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Score:</span>
+                      <span className="font-bold text-blue-600">{Math.floor(data.user1.score)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Public Repos:</span>
+                      <span className="font-bold">{data.user1.repos}</span>
+                    </div>
+                   
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Total Stars:</span>
+                      <span className="font-bold">{data.user1.
+                      stars || 0}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {data.user2 && (
+                <div className="glass-card p-6 bg-green-50 border-green-200">
+                  <h3 className="text-xl font-bold text-slate-900 mb-4">{data.user2.name || data.user2.username}</h3>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Score:</span>
+                      <span className="font-bold text-green-600">{Math.floor(data.user2.score)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Public Repos:</span>
+                      <span className="font-bold">{data.user2.repos}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Total Stars:</span>
+                      <span className="font-bold">{data.user2.stars || 0}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            {data.analysis && (
+              <div className="glass-card p-6 bg-slate-900 text-white">
+                <h3 className="text-xl font-bold mb-4">AI Analysis</h3>
+                <p className="text-slate-300 leading-relaxed whitespace-pre-wrap">{data.analysis}</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* PR Review Dashboard */}
+        {view === 'review' && data && (
+          <div className="space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-700 max-w-7xl mx-auto">
+            <button 
+              onClick={handleReset}
+              className="md:hidden flex items-center gap-2 text-slate-500 font-bold text-sm mb-4"
+            >
+              ← Back
+            </button>
+            <h2 className="text-3xl font-black text-slate-900 mb-8">PR Review</h2>
+            <div className="grid grid-cols-1 gap-8">
+              <div className="glass-card p-6 bg-slate-50">
+                <h3 className="text-xl font-bold text-slate-900 mb-4">Repository: {data.repo}</h3>
+                <div className="space-y-2 text-sm text-slate-600">
+                  <p><span className="font-semibold">PR Number:</span> #{data.pr}</p>
+                  <p><span className="font-semibold">Files Reviewed:</span> {data.files_reviewed}</p>
+                </div>
+              </div>
+              <div className="glass-card p-6 bg-slate-900 text-white">
+                <h3 className="text-xl font-bold mb-4">Review</h3>
+                <p className="text-slate-300 leading-relaxed whitespace-pre-wrap">{data.review}</p>
+              </div>
+            </div>
           </div>
         )}
 
